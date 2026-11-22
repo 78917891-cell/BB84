@@ -1,0 +1,11 @@
+requests>=2.31.0
+websocket-client>=1.7.0
+PyYAML>=6.0.1
+# ---- 语音包：默认关闭，故不装 ----
+# 只想要文字聊天，上面三个包就够了。
+# 想让她发语音：先把 config.yaml 的 voice.enabled 改成 true，再手动装：
+#   pip install pysilk-mod edge-tts
+# pysilk-mod>=1.6.0
+# edge-tts>=7.0.0
+# 可选：自带 ffmpeg。系统已有 ffmpeg、或装过 Agent Reach（自带 ffmpeg）时可省略
+# imageio-ffmpeg>=0.4.9

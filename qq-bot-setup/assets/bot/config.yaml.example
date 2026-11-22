@@ -1,0 +1,108 @@
+# QQ 官方机器人配置 —— 复制为 config.yaml 后填写
+# 申请地址：https://q.qq.com  （创建机器人后拿到 AppID 和 AppSecret）
+
+qq:
+  app_id: "YOUR_APP_ID"          # 机器人 AppID（纯数字字符串）
+  app_secret: "YOUR_APP_SECRET"  # 机器人 AppSecret
+  # 事件订阅方式：WebSocket（推荐本地单机）/ Webhook（需公网 HTTPS，本项目未实现）
+  # 在开放平台「事件订阅与回调地址」里也要选 WebSocket
+  intents:
+    # 群聊 @ 机器人消息（GROUP_AT_MESSAGE_CREATE）
+    group_at_message: true
+    # 群聊全量消息（GROUP_MESSAGE_CREATE，需在开放平台申请"接收所有消息"权限）
+    group_all_message: false
+    # 单聊 / C2C 消息（C2C_MESSAGE_CREATE）
+    c2c_message: true
+  # 群聊触发方式：
+  #   at   = 只响应 @机器人 的消息（推荐，避免刷屏）
+  #   all  = 响应群里所有消息（需 group_all_message: true）
+  #   prefix = 响应以指定前缀开头的消息
+  group_trigger: "at"
+  trigger_prefix: "糍粑 "
+
+deepseek:
+  api_key: "YOUR_DEEPSEEK_API_KEY"   # DeepSeek API Key
+  base_url: "https://api.deepseek.com"
+  model: "deepseek-chat"
+  temperature: 0.7
+  max_tokens: 2048
+  timeout: 60
+
+# 联网能力：让机器人能回答天气/新闻/股价等实时信息
+# 依赖本机已安装的 Agent Reach（可用 skill 里的 install_reach.py 一键装）
+search:
+  enabled: true
+  # 群里是否也联网（关掉可省额度、防刷屏）
+  in_group: true
+  # 单次搜索超时秒数
+  timeout: 20
+  max_results: 3
+  # 命中这些词才联网，避免每句话都查
+  trigger_keywords: ["今天", "现在", "最新", "新闻", "天气", "气温", "温度", "下雨", "股价", "行情", "汇率", "油价", "比分", "实时", "刚刚", "最近", "多少钱", "票价", "航班", "高铁", "查一下", "帮我查"]
+  # 天气走 wttr.in，免费无需 Key；城市按你所在地改
+  weather_enabled: true
+  weather_city: "深圳"
+
+# 长期记忆：随对话自动积累，跨会话、跨天都记得（本地 sqlite，零外部依赖）
+# 只存「他自己说过的稳定事实」和「明确让你记住的事」，不做全量对话存档
+memory:
+  enabled: true
+  db_path: "memory.db"        # 相对路径按程序目录解析；换个位置就填绝对路径
+  max_items_per_user: 300     # 每人上限，超了按「不重要 + 最久没用到」淘汰
+  inject_limit: 8             # 每次最多注入几条旧记忆（多了挤占上下文）
+  llm_extract: true           # 除规则抽取外，再让大模型补抽（更全，但每 N 轮多一次请求）
+  extract_every: 6            # 每 6 轮触发一次 LLM 抽取；设 0 或关掉 llm_extract 就只走规则
+
+# 语音包：把文字回复合成语音发出来（默认关闭，只发文字）
+# 依赖：pysilk-mod（silk 编码）+ ffmpeg；edge 后端另需 edge-tts
+# 安装：pip install pysilk-mod edge-tts imageio-ffmpeg
+voice:
+  enabled: false        # ← 默认关闭；改 true 才会发语音，同时要装上面三个包
+  # TTS 后端：
+  #   edge = Edge TTS，免费、无需 Key（默认）
+  #   http = 任意云端 TTS/声音克隆接口，配置驱动（见下方 http 段）
+  backend: "edge"
+  # 音色（仅 backend=edge 生效）
+  # xiaoyi(活泼女声,默认) / xiaoxiao(温柔) / xiaobei(东北话) / xiaoni(陕西话) / hiuMaan(粤语)
+  voice: "zh-CN-XiaoyiNeural"
+  rate: "+0%"          # 语速，如 +10% / -10%
+  max_chars: 100       # 超过字数只发文字（太长合成慢）
+  send_text: true      # 是否同时发文字（false=只发语音）
+
+  # ---- 以下是 backend=http 时的配置；示例按 MiniMax 语音接口写，字段以官方文档为准 ----
+  # 用克隆音色：先把 assets/voice_ref/ 里的样本上传到平台，拿到 voice_id 填到 voice_setting 里
+  # http:
+  #   url: "https://api.minimax.chat/v1/t2a_v2?GroupId=你的GroupId"
+  #   method: "POST"
+  #   headers:
+  #     Authorization: "Bearer 你的APIKey"
+  #     Content-Type: "application/json"
+  #   body:
+  #     model: "speech-01-turbo"
+  #     text: "{text}"
+  #     stream: false
+  #     voice_setting:
+  #       voice_id: "你的克隆音色ID"
+  #       speed: 1.0
+  #   # 返回形态：
+  #   #   json_base64 = JSON 里放 base64 音频
+  #   #   json_hex    = JSON 里放十六进制音频（MiniMax 是这种）
+  #   #   json_url    = JSON 里放音频下载地址
+  #   #   binary      = 直接返回音频二进制
+  #   response_type: "json_hex"
+  #   audio_key: "data.audio"          # json_base64 / json_hex 的音频字段路径
+  #   audio_url_key: "data.audio_url"  # json_url 的地址字段路径
+  #   timeout: 30
+
+bot:
+  name: "糍粑"
+  # 每个用户/群保留的对话轮数（用户消息+助手消息各算一条）
+  history_rounds: 10
+  # 同一用户两次请求的最小间隔（秒），防刷屏
+  rate_limit_seconds: 1.5
+  # 消息超过多少字符自动分段发送（QQ 单条消息有长度限制）
+  max_chunk_chars: 1000
+  # 是否把 DeepSeek 的 markdown 代码块 ``` 保留（false=转成纯文本，QQ 显示更友好）
+  keep_markdown: false
+  # 调试日志开关
+  debug: true

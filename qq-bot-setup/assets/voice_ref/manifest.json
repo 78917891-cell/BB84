@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "purpose": "声音克隆参考音频（voice cloning reference audio）",
+  "spec": {
+    "container": "wav",
+    "codec": "pcm_s16le",
+    "sample_rate": 16000,
+    "channels": 1,
+    "loudness_target": "-16 LUFS",
+    "true_peak_limit": "-1.5 dBTP",
+    "highpass_hz": 70
+  },
+  "chain": "aformat=channel_layouts=mono,aresample=16000,highpass=f=70,loudnorm=I=-16:TP=-1.5:LRA=11 (两遍线性)",
+  "generator": "scripts/prepare_voice_ref.py",
+  "source_note": "原始素材为 29 个视频的音轨（提取为 16kHz 单声道 WAV，共 44MB，未随包分发）。下列三段由脚本直接从对应 mp4 裁剪，可完整复现。",
+  "samples": [
+    {
+      "file": "ref_01.wav",
+      "duration_sec": 9.6,
+      "bytes": 307324,
+      "source_file": "new_videos/share_16d54f52739fc388e5c753819f27e1031795183117575.mp4",
+      "source_duration_sec": 15.21,
+      "cut_window": "00:01.0 - 00:10.6",
+      "measured_lufs": -15.7,
+      "measured_peak_db": -1.5,
+      "rank": 1,
+      "note": "首选：原始录音综合响度最高（-8.8dB 均值）、人声占比最大，BGM 相对最轻。"
+    },
+    {
+      "file": "ref_02.wav",
+      "duration_sec": 8.2,
+      "bytes": 262524,
+      "source_file": "new_videos/share_394162c041aeabcfcc395290debfdf1e1795183136043.mp4",
+      "source_duration_sec": 18.23,
+      "cut_window": "00:06.8 - 00:15.0",
+      "measured_lufs": -15.7,
+      "measured_peak_db": -1.9,
+      "rank": 2,
+      "note": "备选：取该文件内最长无静音区间（6.70s~15.00s，8.3s）。"
+    },
+    {
+      "file": "ref_03.wav",
+      "duration_sec": 9.0,
+      "bytes": 288124,
+      "source_file": "new_videos/share_ad4eb7eeadf922f48b2c92369cb8e0281795183218813.mp4",
+      "source_duration_sec": 32.34,
+      "cut_window": "00:10.0 - 00:19.0",
+      "measured_lufs": -15.9,
+      "measured_peak_db": -1.6,
+      "rank": 3,
+      "note": "备选：该文件 0~29.29s 连续无静音，取中段以避开片头音乐。"
+    }
+  ],
+  "reproduce": [
+    "python scripts/prepare_voice_ref.py new_videos/share_16d54f52739fc388e5c753819f27e1031795183117575.mp4 --start 1.0 --duration 9.6 --out assets/voice_ref/ref_01.wav",
+    "python scripts/prepare_voice_ref.py new_videos/share_394162c041aeabcfcc395290debfdf1e1795183136043.mp4 --start 6.8 --duration 8.2 --out assets/voice_ref/ref_02.wav",
+    "python scripts/prepare_voice_ref.py new_videos/share_ad4eb7eeadf922f48b2c92369cb8e0281795183218813.mp4 --start 10.0 --duration 9.0 --out assets/voice_ref/ref_03.wav"
+  ],
+  "caveats": [
+    "三段均含原视频的 BGM 底噪：源音频 LRA 仅 0.5~0.8，是被强压缩过的短视频音轨，克隆相似度会受影响。",
+    "若有条件，用手机或麦克风在安静环境重录 20~30 秒单人朗读替换本目录下的 wav，效果明显更好。",
+    "无法从听感确认三个来源是否同一说话人；接入克隆前请先试听，只用一个说话人的样本。",
+    "8~10 秒卡在多数平台的最低门槛（10 秒）边缘，平台支持的话优先换 20~30 秒。"
+  ]
+}
